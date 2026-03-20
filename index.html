@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Karfect – AWS Production Deployment</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #3b82f6;
+    --accent2: #10b981;
+    --accent3: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0a0e17 0%, #0f1c2e 50%, #0a0e17 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 40px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 20%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
+  }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .badge-blue  { color: #60a5fa; border-color: #1d4ed8; background: rgba(59,130,246,0.08); }
+  .badge-green { color: #34d399; border-color: #065f46; background: rgba(16,185,129,0.08); }
+  .badge-amber { color: #fbbf24; border-color: #92400e; background: rgba(245,158,11,0.08); }
+  .badge-red   { color: #f87171; border-color: #7f1d1d; background: rgba(239,68,68,0.08); }
+  .badge-purple{ color: #a78bfa; border-color: #4c1d95; background: rgba(139,92,246,0.08); }
+
+  h1 {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #f1f5f9;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  h1 span { color: var(--accent); }
+  .hero-sub {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 620px;
+    margin-bottom: 28px;
+    font-weight: 300;
+  }
+  .tech-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: #94a3b8;
+  }
+
+  /* ── CONTENT ── */
+  .container { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+  section { padding: 52px 0 0; }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.02em;
+  }
+  h2::before {
+    content: '';
+    display: block;
+    width: 4px; height: 22px;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin: 24px 0 10px;
+    letter-spacing: -0.01em;
+  }
+  p { color: #94a3b8; margin-bottom: 14px; }
+
+  /* ── ARCHITECTURE DIAGRAM ── */
+  .arch-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .arch-wrap svg { display: block; margin: 0 auto; }
+
+  /* ── FLOW STEPS ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 24px 0;
+  }
+  .flow-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    position: relative;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 44px;
+    width: 2px;
+    height: calc(100% - 8px);
+    background: var(--border);
+  }
+  .step-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .step-body { padding: 8px 0 32px; }
+  .step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+  }
+  .step-desc { font-size: 14px; color: #64748b; }
+
+  /* ── CARDS ── */
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card.blue::before  { background: linear-gradient(90deg, #3b82f6, transparent); }
+  .card.green::before { background: linear-gradient(90deg, #10b981, transparent); }
+  .card.amber::before { background: linear-gradient(90deg, #f59e0b, transparent); }
+  .card.red::before   { background: linear-gradient(90deg, #ef4444, transparent); }
+  .card.purple::before{ background: linear-gradient(90deg, #8b5cf6, transparent); }
+  .card.teal::before  { background: linear-gradient(90deg, #06b6d4, transparent); }
+  .card-icon { font-size: 20px; margin-bottom: 10px; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; color: #e2e8f0; }
+  .card p  { font-size: 13px; color: #64748b; margin: 0; }
+  .card ul { list-style: none; margin: 0; }
+  .card ul li {
+    font-size: 13px;
+    color: #64748b;
+    padding: 3px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card ul li::before { content: '→'; color: var(--accent); font-family: monospace; flex-shrink: 0; }
+
+  /* ── SECURITY TABLE ── */
+  .sec-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  .sec-table th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+  .sec-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #94a3b8;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+  }
+  .sec-table tr:hover td { background: var(--surface2); }
+  .sec-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #60a5fa; }
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin: 1px 2px;
+  }
+  .tag-green  { background: rgba(16,185,129,0.12); color: #34d399; }
+  .tag-red    { background: rgba(239,68,68,0.12);  color: #f87171; }
+  .tag-blue   { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .tag-amber  { background: rgba(245,158,11,0.12); color: #fbbf24; }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #94a3b8;
+    margin: 16px 0;
+    overflow-x: auto;
+    line-height: 1.8;
+  }
+  .code-block .c  { color: #475569; }
+  .code-block .kw { color: #60a5fa; }
+  .code-block .str{ color: #34d399; }
+  .code-block .num{ color: #f59e0b; }
+
+  /* ── LEARNINGS ── */
+  .learn-list { list-style: none; margin: 16px 0; }
+  .learn-list li {
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #94a3b8;
+  }
+
+  /* ── SERVICES GRID ── */
+  .services-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .svc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .svc-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 72px;
+    border-top: 1px solid var(--border);
+    padding: 32px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer span { font-family: 'JetBrains Mono', monospace; }
+
+  @media(max-width: 640px) {
+    .hero { padding: 40px 20px 36px; }
+    h1 { font-size: 26px; }
+    .container { padding: 0 20px; }
+    .card-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════ HERO ═══════ -->
+<div class="hero">
+  <div class="container">
+    <div class="badge-row">
+      <span class="badge badge-blue">AWS</span>
+      <span class="badge badge-green">Production-Grade</span>
+      <span class="badge badge-amber">High Availability</span>
+      <span class="badge badge-purple">PHP · Laravel</span>
+    </div>
+    <h1>Karfect — <span>AWS Cloud Deployment</span></h1>
+    <p class="hero-sub">
+      A full-stack PHP/Laravel web application deployed on AWS with auto scaling, CDN delivery, private networking, and centralized monitoring — built to production standards.
+    </p>
+    <div class="tech-pills">
+      <span class="pill">EC2</span>
+      <span class="pill">ASG</span>
+      <span class="pill">ALB</span>
+      <span class="pill">RDS MySQL</span>
+      <span class="pill">S3</span>
+      <span class="pill">CloudFront</span>
+      <span class="pill">VPC</span>
+      <span class="pill">NAT Gateway</span>
+      <span class="pill">Internet Gateway</span>
+      <span class="pill">CloudWatch</span>
+      <span class="pill">SNS</span>
+      <span class="pill">ACM (SSL)</span>
+      <span class="pill">IAM</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══════ ARCHITECTURE ═══════ -->
+  <section>
+    <h2>Architecture overview</h2>
+    <p>The deployment separates compute, database, and static assets across distinct AWS services — each in its correct network tier. CloudFront sits at the edge with two origins: S3 for static files and ALB for dynamic PHP traffic.</p>
+
+    <div class="arch-wrap">
+      <svg width="100%" viewBox="0 0 760 820" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- User -->
+        <rect x="290" y="14" width="180" height="44" rx="8" fill="#1a2235" stroke="#1e2d45" stroke-width="1"/>
+        <text x="380" y="34" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">USER</text>
+        <text x="380" y="50" text-anchor="middle" fill="#475569" font-size="10">Internet</text>
+
+        <!-- user → CF -->
+        <line x1="380" y1="58" x2="380" y2="98" stroke="#334155" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- CloudFront -->
+        <rect x="195" y="98" width="370" height="56" rx="8" fill="#0f1c2e" stroke="#1d4ed8" stroke-width="1"/>
+        <text x="380" y="121" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="600">CLOUDFRONT</text>
+        <text x="380" y="141" text-anchor="middle" fill="#1d4ed8" font-size="10">CDN · SSL Termination · Edge Cache · 2 Origins</text>
+
+        <!-- origin labels -->
+        <text x="148" y="184" text-anchor="middle" fill="#10b981" font-size="10">Origin 1</text>
+        <text x="612" y="184" text-anchor="middle" fill="#3b82f6" font-size="10">Origin 2</text>
+
+        <!-- CF → S3 -->
+        <path d="M230 154 L230 188 L104 188 L104 244" fill="none" stroke="#10b981" stroke-width="1.2" marker-end="url(#arr)"/>
+        <!-- CF → IGW -->
+        <path d="M530 154 L530 188 L656 188 L656 244" fill="none" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- VPC boundary -->
+        <rect x="24" y="228" width="712" height="578" rx="14" fill="none" stroke="#1e2d45" stroke-width="1" stroke-dasharray="6 3"/>
+        <text x="40" y="248" fill="#334155" font-size="10">VPC</text>
+
+        <!-- S3 -->
+        <rect x="40" y="244" width="130" height="56" rx="8" fill="#0a1a14" stroke="#065f46" stroke-width="1"/>
+        <text x="105" y="267" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">S3</text>
+        <text x="105" y="285" text-anchor="middle" fill="#065f46" font-size="10">Static assets</text>
+
+        <!-- Internet Gateway -->
+        <rect x="590" y="244" width="130" height="56" rx="8" fill="#0f1c2e" stroke="#1d4ed8" stroke-width="1"/>
+        <text x="655" y="263" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">INTERNET</text>
+        <text x="655" y="277" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">GATEWAY</text>
+        <text x="655" y="291" text-anchor="middle" fill="#1d4ed8" font-size="10">VPC internet entry</text>
+
+        <!-- IGW → ALB -->
+        <line x1="655" y1="300" x2="655" y2="360" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- Public subnet -->
+        <rect x="38" y="340" width="684" height="180" rx="10" fill="#0d1a0f" stroke="#14532d" stroke-width="0.8" stroke-dasharray="4 2"/>
+        <text x="56" y="360" fill="#16a34a" font-size="10">Public Subnets · AZ-1 &amp; AZ-2</text>
+
+        <!-- Route table badge -->
+        <rect x="420" y="344" width="150" height="16" rx="3" fill="#0f2318" stroke="#14532d" stroke-width="0.5"/>
+        <text x="495" y="355" text-anchor="middle" fill="#16a34a" font-size="9">route: 0.0.0.0/0 → IGW</text>
+
+        <!-- Bastion Host -->
+        <rect x="56" y="370" width="150" height="56" rx="8" fill="#1a1500" stroke="#92400e" stroke-width="1"/>
+        <text x="131" y="393" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">BASTION HOST</text>
+        <text x="131" y="411" text-anchor="middle" fill="#92400e" font-size="10">SSH · Admin access</text>
+
+        <!-- NAT Gateway -->
+        <rect x="235" y="370" width="150" height="56" rx="8" fill="#0a1810" stroke="#166534" stroke-width="1"/>
+        <text x="310" y="390" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600">NAT GATEWAY</text>
+        <text x="310" y="408" text-anchor="middle" fill="#166534" font-size="10">Outbound only</text>
+        <text x="310" y="420" text-anchor="middle" fill="#166534" font-size="10">EC2 → Internet</text>
+
+        <!-- ALB -->
+        <rect x="460" y="370" width="210" height="56" rx="8" fill="#0f1c2e" stroke="#1d4ed8" stroke-width="1"/>
+        <text x="565" y="390" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">APP LOAD BALANCER</text>
+        <text x="565" y="408" text-anchor="middle" fill="#1d4ed8" font-size="10">HTTP → HTTPS · Target group</text>
+        <text x="565" y="420" text-anchor="middle" fill="#1d4ed8" font-size="10">SG: 80/443 from 0.0.0.0/0</text>
+
+        <!-- NAT → IGW outbound dashed -->
+        <path d="M310 370 L310 310 L590 310 L590 272" fill="none" stroke="#16a34a" stroke-width="1" stroke-dasharray="4 2" marker-end="url(#arr)"/>
+        <text x="450" y="306" text-anchor="middle" fill="#166534" font-size="9">Outbound traffic (updates / logs)</text>
+
+        <!-- ALB → EC2 -->
+        <line x1="565" y1="426" x2="565" y2="560" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#arr)"/>
+
+        <!-- Bastion → EC2 SSH -->
+        <path d="M131 426 L131 510 L430 510" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 2" marker-end="url(#arr)"/>
+        <text x="280" y="505" text-anchor="middle" fill="#92400e" font-size="9">SSH · port 22</text>
+
+        <!-- Private subnet -->
+        <rect x="38" y="546" width="684" height="244" rx="10" fill="#1a0505" stroke="#7f1d1d" stroke-width="0.8" stroke-dasharray="4 2"/>
+        <text x="56" y="566" fill="#b91c1c" font-size="10">Private Subnets · AZ-1 &amp; AZ-2</text>
+
+        <!-- Route table badge private -->
+        <rect x="420" y="550" width="160" height="16" rx="3" fill="#1a0a0a" stroke="#7f1d1d" stroke-width="0.5"/>
+        <text x="500" y="561" text-anchor="middle" fill="#b91c1c" font-size="9">route: 0.0.0.0/0 → NAT</text>
+
+        <!-- EC2 / ASG -->
+        <rect x="380" y="574" width="310" height="68" rx="8" fill="#160e2e" stroke="#4c1d95" stroke-width="1"/>
+        <text x="535" y="597" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">EC2 · AUTO SCALING GROUP</text>
+        <text x="535" y="614" text-anchor="middle" fill="#4c1d95" font-size="10">Nginx · PHP-FPM · MySQL Client</text>
+        <text x="535" y="628" text-anchor="middle" fill="#4c1d95" font-size="10">CloudWatch Agent · /var/www/karfect</text>
+
+        <!-- EC2 → RDS -->
+        <line x1="430" y1="608" x2="282" y2="608" stroke="#ef4444" stroke-width="1.2" marker-end="url(#arr)"/>
+        <text x="352" y="602" text-anchor="middle" fill="#7f1d1d" font-size="9">3306 · EC2 SG only</text>
+
+        <!-- EC2 → NAT outbound -->
+        <path d="M480 574 L480 500 L310 500 L310 426" fill="none" stroke="#16a34a" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+
+        <!-- RDS -->
+        <rect x="56" y="574" width="226" height="68" rx="8" fill="#1a0808" stroke="#7f1d1d" stroke-width="1"/>
+        <text x="169" y="600" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">RDS · MYSQL</text>
+        <text x="169" y="617" text-anchor="middle" fill="#7f1d1d" font-size="10">Private · No public access</text>
+        <text x="169" y="631" text-anchor="middle" fill="#7f1d1d" font-size="10">Multi-AZ ready · port 3306</text>
+
+        <!-- CloudWatch -->
+        <rect x="380" y="672" width="310" height="56" rx="8" fill="#1a1200" stroke="#92400e" stroke-width="1"/>
+        <text x="535" y="695" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">CLOUDWATCH</text>
+        <text x="535" y="713" text-anchor="middle" fill="#92400e" font-size="10">Logs · CPU/RAM Alarms · SNS Email Alerts</text>
+
+        <!-- EC2 → CW -->
+        <line x1="535" y1="642" x2="535" y2="672" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 2" marker-end="url(#arr)"/>
+
+        <!-- AMI note -->
+        <rect x="56" y="672" width="226" height="56" rx="8" fill="#0d111a" stroke="#1e2d45" stroke-width="1"/>
+        <text x="169" y="695" text-anchor="middle" fill="#64748b" font-size="11" font-weight="600">AMI · LAUNCH TEMPLATE</text>
+        <text x="169" y="713" text-anchor="middle" fill="#334155" font-size="10">ASG: min 1 / desired 2 / max 4</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══════ SERVICES ═══════ -->
+  <section>
+    <h2>AWS services used</h2>
+    <div class="services-grid">
+      <span class="svc"><span class="svc-dot" style="background:#3b82f6"></span>EC2</span>
+      <span class="svc"><span class="svc-dot" style="background:#8b5cf6"></span>Auto Scaling Group</span>
+      <span class="svc"><span class="svc-dot" style="background:#3b82f6"></span>App Load Balancer</span>
+      <span class="svc"><span class="svc-dot" style="background:#ec4899"></span>RDS (MySQL)</span>
+      <span class="svc"><span class="svc-dot" style="background:#10b981"></span>S3</span>
+      <span class="svc"><span class="svc-dot" style="background:#3b82f6"></span>CloudFront</span>
+      <span class="svc"><span class="svc-dot" style="background:#6366f1"></span>VPC</span>
+      <span class="svc"><span class="svc-dot" style="background:#10b981"></span>NAT Gateway</span>
+      <span class="svc"><span class="svc-dot" style="background:#3b82f6"></span>Internet Gateway</span>
+      <span class="svc"><span class="svc-dot" style="background:#f59e0b"></span>CloudWatch</span>
+      <span class="svc"><span class="svc-dot" style="background:#f59e0b"></span>SNS</span>
+      <span class="svc"><span class="svc-dot" style="background:#14b8a6"></span>ACM (SSL)</span>
+      <span class="svc"><span class="svc-dot" style="background:#94a3b8"></span>IAM</span>
+      <span class="svc"><span class="svc-dot" style="background:#94a3b8"></span>AMI</span>
+    </div>
+  </section>
+
+  <!-- ═══════ HOW I BUILT IT ═══════ -->
+  <section>
+    <h2>How I built this — step by step</h2>
+    <p>I started from a single server and progressively layered in AWS services until the full production architecture was running. Here is the exact sequence of decisions and actions.</p>
+
+    <div class="flow">
+
+      <div class="flow-step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <div class="step-title">Set up a base EC2 instance and install the full stack</div>
+          <div class="step-desc">
+            Launched a public EC2 instance and manually installed everything the Laravel app needs: Nginx as the web server, PHP-FPM for processing PHP, MySQL client for database access, and Composer for dependency management. Deployed the Karfect codebase to <code style="color:#60a5fa;font-size:12px">/var/www/karfect</code>, configured the Nginx server block in <code style="color:#60a5fa;font-size:12px">sites-available</code>, and enabled it via symlink to <code style="color:#60a5fa;font-size:12px">sites-enabled</code>.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-title">Designed the VPC — 2 public + 2 private subnets across 2 AZs</div>
+          <div class="step-desc">
+            Created a custom VPC with proper subnet separation. Public subnets host internet-facing resources (ALB, Bastion, NAT Gateway). Private subnets host the compute (EC2/ASG) and database (RDS) — completely isolated from direct internet access. Configured route tables: public subnet routes 0.0.0.0/0 through the Internet Gateway, private subnet routes 0.0.0.0/0 through the NAT Gateway for outbound-only access.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <div class="step-title">Provisioned RDS in the private subnet and imported the database</div>
+          <div class="step-desc">
+            Launched a MySQL RDS instance inside the private subnet with no public accessibility. Created a dedicated Security Group allowing inbound port 3306 only from the EC2 Security Group — nothing else. Connected to the RDS endpoint via the bastion host, created the Karfect database, and imported the full schema and data. Updated the Laravel <code style="color:#60a5fa;font-size:12px">.env</code> DB config to point to the RDS endpoint.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <div class="step-title">Moved static assets to S3 and set up CloudFront with dual origins</div>
+          <div class="step-desc">
+            Created an S3 bucket, uploaded all images and static files from the Karfect app, and updated the app to reference S3/CloudFront URLs. Created a CloudFront distribution with two origins: S3 as Origin 1 (for static files — delivered from edge locations worldwide) and the ALB as Origin 2 (for dynamic PHP requests). Cache behavior rules route <code style="color:#60a5fa;font-size:12px">/images/*</code> and <code style="color:#60a5fa;font-size:12px">/static/*</code> to S3, everything else to ALB.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">05</div>
+        <div class="step-body">
+          <div class="step-title">Verified the full app was working, then created an AMI</div>
+          <div class="step-desc">
+            Tested every part of the application end-to-end — web pages, database reads and writes, image delivery via CloudFront. Once everything was confirmed working on the base EC2, created a custom AMI (Amazon Machine Image) from that instance. This AMI becomes the immutable base for all future EC2 instances in the Auto Scaling Group — it captures the exact server configuration.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">06</div>
+        <div class="step-body">
+          <div class="step-title">Built Auto Scaling Group from the AMI via Launch Template</div>
+          <div class="step-desc">
+            Created a Launch Template using the AMI, specifying instance type, Security Group, key pair, and IAM role. Configured the Auto Scaling Group with min: 1, desired: 2, max: 4. Set up a target tracking scaling policy based on CPU utilization — ASG automatically adds instances under load and terminates them when traffic drops. Attached the ASG to the ALB Target Group so new instances are automatically registered and health-checked.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">07</div>
+        <div class="step-body">
+          <div class="step-title">Configured the Application Load Balancer with SSL</div>
+          <div class="step-desc">
+            Created an ALB in the public subnets, listening on ports 80 and 443. Attached an ACM (AWS Certificate Manager) SSL certificate to the HTTPS listener. Added a redirect rule: HTTP (port 80) → HTTPS (port 443). The ALB distributes incoming requests across all healthy EC2 instances in the Target Group and performs health checks to route only to running instances.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-num">08</div>
+        <div class="step-body">
+          <div class="step-title">Installed CloudWatch Agent and configured alarms</div>
+          <div class="step-desc">
+            Installed and configured the CloudWatch Agent on EC2 instances to stream Nginx access logs, Nginx error logs, and system logs to CloudWatch Log Groups — accessible remotely without needing to SSH. Created metric alarms: CPU utilization above 70% triggers an SNS notification via email, and memory utilization is also monitored. This gives full observability without touching the server.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ INFRA BREAKDOWN ═══════ -->
+  <section>
+    <h2>Infrastructure breakdown</h2>
+    <div class="card-grid">
+      <div class="card blue">
+        <div class="card-icon">🌐</div>
+        <h3>Networking · VPC</h3>
+        <ul>
+          <li>Custom VPC with CIDR block</li>
+          <li>2 public subnets (AZ-1, AZ-2)</li>
+          <li>2 private subnets (AZ-1, AZ-2)</li>
+          <li>Internet Gateway for public access</li>
+          <li>NAT Gateway for private outbound</li>
+          <li>Route tables per subnet tier</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <div class="card-icon">⚙️</div>
+        <h3>Compute · EC2 + ASG</h3>
+        <ul>
+          <li>Nginx + PHP-FPM on each instance</li>
+          <li>App at /var/www/karfect</li>
+          <li>AMI → Launch Template → ASG</li>
+          <li>Min 1 · Desired 2 · Max 4</li>
+          <li>CPU-based scaling policy</li>
+          <li>Health checks via ALB</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <div class="card-icon">⚖️</div>
+        <h3>Load Balancer · ALB</h3>
+        <ul>
+          <li>In public subnets (AZ-1, AZ-2)</li>
+          <li>HTTP → HTTPS redirect</li>
+          <li>ACM SSL certificate attached</li>
+          <li>Target group with health checks</li>
+          <li>Forwards to ASG instances</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <div class="card-icon">🗄️</div>
+        <h3>Database · RDS MySQL</h3>
+        <ul>
+          <li>In private subnet only</li>
+          <li>No public accessibility</li>
+          <li>SG: port 3306 from EC2 SG</li>
+          <li>Karfect DB imported via bastion</li>
+          <li>Laravel .env updated to RDS endpoint</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <div class="card-icon">🚀</div>
+        <h3>CDN · S3 + CloudFront</h3>
+        <ul>
+          <li>S3: static files and images</li>
+          <li>CloudFront with 2 origins</li>
+          <li>Origin 1: S3 (static assets)</li>
+          <li>Origin 2: ALB (dynamic PHP)</li>
+          <li>Edge delivery worldwide</li>
+        </ul>
+      </div>
+      <div class="card amber">
+        <div class="card-icon">📊</div>
+        <h3>Monitoring · CloudWatch</h3>
+        <ul>
+          <li>CloudWatch Agent on EC2</li>
+          <li>Nginx access + error log streams</li>
+          <li>System logs streamed remotely</li>
+          <li>CPU alarm &gt; 70% → SNS email</li>
+          <li>Memory utilization alarm</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ SECURITY ═══════ -->
+  <section>
+    <h2>Security design</h2>
+    <p>Every resource is restricted to the minimum access it requires. No component is publicly reachable unless it absolutely needs to be.</p>
+    <table class="sec-table">
+      <thead>
+        <tr>
+          <th>Resource</th>
+          <th>Protocol · Port</th>
+          <th>Source</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ALB</td>
+          <td><span class="tag tag-blue">HTTP 80</span><span class="tag tag-blue">HTTPS 443</span></td>
+          <td><span class="tag tag-green">0.0.0.0/0</span></td>
+          <td>Public-facing load balancer</td>
+        </tr>
+        <tr>
+          <td>EC2 (via ASG)</td>
+          <td><span class="tag tag-blue">HTTP 80</span></td>
+          <td><span class="tag tag-amber">ALB SG only</span></td>
+          <td>No direct public access to EC2</td>
+        </tr>
+        <tr>
+          <td>EC2 SSH</td>
+          <td><span class="tag tag-blue">SSH 22</span></td>
+          <td><span class="tag tag-amber">Bastion SG only</span></td>
+          <td>SSH restricted to bastion host</td>
+        </tr>
+        <tr>
+          <td>Bastion Host</td>
+          <td><span class="tag tag-blue">SSH 22</span></td>
+          <td><span class="tag tag-amber">Admin IP only</span></td>
+          <td>Single controlled entry point</td>
+        </tr>
+        <tr>
+          <td>RDS MySQL</td>
+          <td><span class="tag tag-red">MySQL 3306</span></td>
+          <td><span class="tag tag-amber">EC2 SG only</span></td>
+          <td>No public access, private subnet</td>
+        </tr>
+        <tr>
+          <td>S3 Bucket</td>
+          <td><span class="tag tag-blue">HTTPS</span></td>
+          <td><span class="tag tag-amber">CloudFront OAI</span></td>
+          <td>Direct S3 access blocked</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════ DEPLOYMENT FLOW ═══════ -->
+  <section>
+    <h2>Deployment flow</h2>
+    <div class="code-block">
+<span class="c"># Full provisioning sequence</span>
+
+<span class="kw">EC2</span> (base setup)
+  └─ Install: nginx · php-fpm · mysql-client · composer
+  └─ Deploy: /var/www/karfect
+  └─ Configure: nginx sites-available → sites-enabled symlink
+  └─ Connect to RDS, import karfect DB, update .env
+  └─ Test: app fully working ✓
+
+<span class="kw">AMI</span> ← snapshot of working EC2
+  └─ <span class="kw">Launch Template</span> (AMI + SG + IAM role + instance type)
+      └─ <span class="kw">Auto Scaling Group</span> (min:1 / desired:2 / max:4)
+          └─ CPU scaling policy (target tracking)
+          └─ <span class="kw">Target Group</span> ← health check /
+              └─ <span class="kw">Application Load Balancer</span> (HTTPS · ACM cert · redirect)
+                  └─ <span class="kw">CloudFront</span> (Origin 2)
+
+<span class="kw">RDS</span> MySQL (private subnet)
+  └─ SG: inbound 3306 from EC2 SG only
+  └─ No public endpoint
+
+<span class="kw">S3</span> → <span class="kw">CloudFront</span> (Origin 1)
+  └─ Static files · images · edge delivery
+
+<span class="kw">CloudWatch Agent</span> on EC2
+  └─ Log groups: nginx/access · nginx/error · system
+  └─ Alarms: CPU > 70% → SNS → Email
+    </div>
+  </section>
+
+  <!-- ═══════ KEY LEARNINGS ═══════ -->
+  <section>
+    <h2>Key learnings</h2>
+    <ul class="learn-list">
+      <li>Moving from a monolithic single-server setup to a properly layered architecture requires thinking about network tiers first — what is public, what is private, and why.</li>
+      <li>NAT Gateway is essential for private EC2 instances to reach the internet for outbound tasks (package installs, CloudWatch log delivery) without being reachable from the internet themselves.</li>
+      <li>CloudFront with two origins is the right pattern when a PHP app has both dynamic routes and heavy static assets — it separates caching strategies per origin.</li>
+      <li>Building an AMI from a working instance before creating the ASG ensures every auto-scaled instance starts in a known, tested state — avoiding configuration drift.</li>
+      <li>Security groups work best when chained: ALB SG → EC2 SG → RDS SG, so no layer is directly exposed beyond its upstream caller.</li>
+      <li>CloudWatch Agent enables remote log access and alerting without SSH — critical for production environments where direct server access should be rare.</li>
+    </ul>
+  </section>
+
+  <!-- ═══════ STACK ═══════ -->
+  <section style="padding-bottom: 0;">
+    <h2>Application stack</h2>
+    <div class="card-grid">
+      <div class="card teal">
+        <h3>Backend</h3>
+        <ul>
+          <li>PHP · Laravel framework</li>
+          <li>MySQL relational database</li>
+          <li>Nginx web server</li>
+          <li>PHP-FPM process manager</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>Frontend</h3>
+        <ul>
+          <li>Blade templates (Laravel)</li>
+          <li>Static assets on S3</li>
+          <li>Images served via CloudFront</li>
+          <li>HTTPS enforced end-to-end</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span>Karfect — AWS Production Deployment</span>
+  <span style="color:#334155">EC2 · RDS · S3 · CloudFront · VPC · ASG · ALB · CloudWatch</span>
+</footer>
+
+</body>
+</html>
