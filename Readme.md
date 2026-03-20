@@ -93,10 +93,6 @@ Launched a public EC2 instance and installed the full application stack:
 # Web server and PHP
 sudo apt install nginx php-fpm php-mysql php-mbstring php-xml -y
 
-# Composer for Laravel dependencies
-curl -sS https://getcomposer.org/installer | php
-sudo mv composer.phar /usr/local/bin/composer
-
 # Deploy application
 sudo cp -r karfect/ /var/www/karfect
 sudo chown -R www-data:www-data /var/www/karfect
